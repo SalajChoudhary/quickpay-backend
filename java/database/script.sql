@@ -66,4 +66,34 @@ CREATE TABLE transactions(
                              CONSTRAINT FK_transaction_target_id FOREIGN KEY (target_id) REFERENCES account (account_id)
 );
 
+
+ALTER TABLE friend DROP CONSTRAINT IF EXISTS FK_friend_friend_account_id;
+ALTER TABLE friend DROP CONSTRAINT IF EXISTS FK_friend_friend_id;
+
+-- Next, add a composite column for the UNIQUE constraint
+ALTER TABLE friend
+    ADD COLUMN friend_pair INT GENERATED ALWAYS AS (LEAST(friend_account_id, friend_id)) STORED,
+    ADD COLUMN friend_pair_max INT GENERATED ALWAYS AS (GREATEST(friend_account_id, friend_id)) STORED;
+
+-- Then, add the UNIQUE constraint using the composite columns
+ALTER TABLE friend
+    ADD CONSTRAINT UQ_friend_pair UNIQUE (friend_pair, friend_pair_max);
+
+-- Finally, re-add the foreign key constraints
+ALTER TABLE friend
+    ADD CONSTRAINT FK_friend_friend_account_id FOREIGN KEY (friend_account_id) REFERENCES account (account_id),
+    ADD CONSTRAINT FK_friend_friend_id FOREIGN KEY (friend_id) REFERENCES account (account_id);
+
+INSERT INTO users (username,password_hash,role, account_id, email, birth_date, first_name, last_name, phone_number, address, city, state, zipcode)
+VALUES ('user','$2a$08$UkVvwpULis18S19S5pZFn.YHPZt3oaqHZnDwqbCW9pft6uFtkXKDC','ROLE_USER', 1, 'test@gmail.com', '1986-12-10', 'Test', 'Example', '123-123-1234', '10 Test Street', 'Tampa', 'Florida', '12345');
+
+INSERT INTO users (username,password_hash,role, account_id, email, birth_date, first_name, last_name, phone_number, address, city, state, zipcode)
+VALUES ('admin','$2a$08$UkVvwpULis18S19S5pZFn.YHPZt3oaqHZnDwqbCW9pft6uFtkXKDC','ROLE_ADMIN', 2,'test@gmail.com', '1986-12-10', 'Test', 'Example', '123-123-1234', '10 Test Street', 'Tampa', 'Florida', '12345');
+
+INSERT INTO account(account_id, balance)
+VALUES (1, 0);
+
+INSERT INTO account(account_id, balance)
+VALUES(2, 0);
+
 COMMIT TRANSACTION;
